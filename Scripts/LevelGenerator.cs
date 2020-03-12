@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [ExecuteInEditMode]
+[RequireComponent(typeof(LineRenderer))]
 public class LevelGenerator : MonoBehaviour
 {
 
@@ -21,14 +22,10 @@ public class LevelGenerator : MonoBehaviour
     [Range(0f, 120f)]
     public float smoothness = 75f;
 
-    public GameObject player;
     public int seed;
 
     [Range(0f, 1f)] public float pickDistance;
     [Range(0f, 1f)] public float pickVariance;
-
-    public GameObject[] enemies;
-    public GameObject[] decorations;
 
     public int enemyCount;
     public int decorationCount;
@@ -52,7 +49,11 @@ public class LevelGenerator : MonoBehaviour
     Vector3 minPoint;
     Vector3 maxPoint;
 
-    // Start is called before the first frame update
+    void Awake()
+    {
+        if (line == null) line = GetComponent<LineRenderer>();
+    }
+
     void Start()
     {
         BuildFull();
@@ -420,20 +421,6 @@ public class LevelGenerator : MonoBehaviour
             if (points[i].z < minPoint.z) minPoint.z = points[i].z;
             if (points[i].x > maxPoint.x) maxPoint.x = points[i].x;
             if (points[i].z > maxPoint.z) maxPoint.z = points[i].z;
-        }
-
-        if (player != null)
-        {
-            player.transform.position = RandomPosition();
-            player.transform.LookAt(transform, Vector3.up);
-        }
-
-        if (enemies.Length > 0) {
-            for (int i = 0; i < enemyCount; i++) {
-                
-                GameObject prefab = enemies[RngRange(0, enemies.Length)];
-                Instantiate(prefab, GetPoint(), Quaternion.identity).transform.parent = transform;
-            }
         }
 
         if (triangulate) {

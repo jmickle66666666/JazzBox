@@ -42,11 +42,6 @@ public class QuantizeMesh : MonoBehaviour
     public bool work = false;
     public Material material;
 
-    void Start()
-    {
-        
-    }
-
     void Update()
     {
         worldBounds.center = transform.position;

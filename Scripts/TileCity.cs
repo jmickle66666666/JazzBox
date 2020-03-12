@@ -35,13 +35,6 @@ public class TileCity : MonoBehaviour
     Vector3[,] basePoints;
     int[,] baseData;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
     void Update()
     {
         if (work || ready == false) {

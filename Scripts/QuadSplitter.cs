@@ -19,8 +19,6 @@ public class QuadSplitter : MonoBehaviour
     public float relaxation;
     public Material material;
     public Material flatMaterial;
-    // public Material roadMaterial;
-    // public Vector2Int sections;
 
     List<Vector2> points;
     List<int[]> shapes;
@@ -30,13 +28,6 @@ public class QuadSplitter : MonoBehaviour
     [Header("Make it work")]
     public bool work = false;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
     void Update()
     {
         if (work) {
@@ -44,8 +35,6 @@ public class QuadSplitter : MonoBehaviour
             Build();
         }
 
-
-        
         if (bakedShapes != null) {
             // PreviewBakedShapes();
         }
