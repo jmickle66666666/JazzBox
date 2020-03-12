@@ -6,12 +6,13 @@ using System;
 
 public class Screenshotter : MonoBehaviour {
 
-	// Use this for initialization
-	void Start () {
-		
+	public int scale = 1;
+
+	void OnValidate()
+	{
+		scale = Mathf.Max(1, scale);
 	}
-	
-	// Update is called once per frame
+
 	void Update () {
 		if (Input.GetKeyDown(KeyCode.P)) {
 			string datetime = DateTime.Now.ToString();
@@ -42,7 +43,7 @@ public class Screenshotter : MonoBehaviour {
 
 			Debug.Log(path);
 
-			ScreenCapture.CaptureScreenshot(path, 3);
+			ScreenCapture.CaptureScreenshot(path, scale);
 		}	
 	}
 }
