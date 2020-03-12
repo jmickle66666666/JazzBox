@@ -11,6 +11,8 @@ public class SimplePlayer : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+		Cursor.lockState = CursorLockMode.Locked;
+		Cursor.visible = false;
 		characterController = GetComponent<CharacterController>();
 		movement = new Vector3();
 	}
@@ -19,7 +21,7 @@ public class SimplePlayer : MonoBehaviour {
 	void Update () {
 		movement.Set(1,1,1);
 		movement.Scale(
-			Input.GetAxisRaw("Horizontal") * Camera.main.transform.right + Input.GetAxisRaw("Vertical") * Camera.main.transform.forward
+			Input.GetAxisRaw("Horizontal") * transform.right + Input.GetAxisRaw("Vertical") * transform.forward
 		);
 		
 		characterController.Move(

@@ -100,8 +100,8 @@ public class TileCity : MonoBehaviour
 
         Random.InitState(seed);
 
-        for (int i = 0; i < numWidth-1; i++) {
-            for (int j =0; j < numHeight-1; j++) {
+        for (int i = 1; i < numWidth-2; i++) {
+            for (int j = 1; j < numHeight-2; j++) {
                 if (baseData[i,j] == 0) {
                     if (
                         baseData[i-1, j] == -1 ||
@@ -237,15 +237,14 @@ public class TileCity : MonoBehaviour
         newMesh.transform.parent = container.transform;
     }
 
-    public GameObject lightPrefab; 
     void ProcSide(Vector3 A, Vector3 B, Vector3 C, Vector3 D)
     {
-        if (Random.value < 0.1f && C.y > 3f) {
-            Vector3 normal = -new Vector3(-(B.z - A.z), 0f, B.x - A.x);
-            Vector3 pos = ((A+B+C+D)/4) - normal * 0.01f;
-            pos.y = 3f;
-            Instantiate(lightPrefab, pos, Quaternion.LookRotation(normal, Vector3.up)).transform.parent = container.transform;
-        }
+        // if (Random.value < 0.1f && C.y > 3f) {
+        //     Vector3 normal = -new Vector3(-(B.z - A.z), 0f, B.x - A.x);
+        //     Vector3 pos = ((A+B+C+D)/4) - normal * 0.01f;
+        //     pos.y = 3f;
+        //     // Instantiate(lightPrefab, pos, Quaternion.LookRotation(normal, Vector3.up)).transform.parent = container.transform;
+        // }
     }
 
     // void OnDrawGizmos()
@@ -280,6 +279,12 @@ public class TileCity : MonoBehaviour
     bool ready = false;
     void OnValidate()
     {
+        numWidth = Mathf.Max(1, numWidth);
+        numHeight = Mathf.Max(1, numHeight);
+
+        areaWidth = Mathf.Max(0.01f, areaWidth);
+        areaHeight = Mathf.Max(0.01f, areaHeight);
+
         ready = false;
         // Build();
     }

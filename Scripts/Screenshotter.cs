@@ -42,7 +42,7 @@ public class Screenshotter : MonoBehaviour {
 
 			Debug.Log(path);
 
-			ScreenCapture.CaptureScreenshot(path, 1);
+			ScreenCapture.CaptureScreenshot(path, 3);
 		}	
 	}
 }
