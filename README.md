@@ -62,3 +62,5 @@
 ### shaders
 
 i need to go through and clean all these up still. mess around with them tho there's cool stuff in there
+
+i definitely stole/referenced a ton of stuff from Ronja here too (https://www.ronja-tutorials.com/) 
