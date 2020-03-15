@@ -11,6 +11,8 @@
 
 `editor/followscenecamera.cs` - moves the camera to where the scene camera is
 
+`editor/speechgen.cs` - generates text to speech stuff for you (only works on mac because it uses the mac `say` command)
+
 `fontgrab.cs` - grab random fonts from fonts.google.com
 
 `jazzutil.cs` - currently just SquaredDistance calculation, which is handy
