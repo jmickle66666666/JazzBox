@@ -19,7 +19,7 @@ public class SpeechGenerator : EditorWindow {
 	static string outputFolder = "Speech";
 	SpeechGeneratorVoice voice = SpeechGeneratorVoice.Samantha;
 
-	[MenuItem("Util/Speech Gen")]
+	[MenuItem("Tools/Speech Gen")]
 	static void Init() {
 		SpeechGenerator speechGen = (SpeechGenerator)EditorWindow.GetWindow(typeof(SpeechGenerator));
 		speechGen.Show();
@@ -27,6 +27,7 @@ public class SpeechGenerator : EditorWindow {
 
 	void OnGUI() {
 		GUILayout.Label("Jazz Mickle's Automatic Speech Generator");
+		GUILayout.Label("ONLY WORKS ON MAC, SORRY");
 		GUILayout.Space(10);
 		//GUILayout.Label("Jazz Mickle's Automatic Speech Generator");
 		outputFolder = EditorGUILayout.TextField("Output Folder", outputFolder);
