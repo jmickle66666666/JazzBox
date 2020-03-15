@@ -1,5 +1,5 @@
 # JazzBox
- unity stuff
+ unity stuff. add it to a project by getting the .git link (click `clone or download` then copy that url) and adding it to the unity package manager (Window > Package Manager > + > Add package from Git URL)
 
 ### i can remember what these things do
 
