@@ -7,6 +7,8 @@
 
 `blink.cs` - enable/disable a target object on a timer
 
+`cellgen.cs` - 2d cellular automata generator with a really cool custom inspector system (also a good reference!)
+
 `colors.cs` - nice color palette
 
 `distorter.cs` - this does a cool thing but i need to check how it works again
@@ -28,6 +30,8 @@
 `noisegenerator.cs` - i'm gonna guess it generates noise
 
 `postprocesscamera.cs` - render screen through a material
+
+`palettegenerator.cs` - simple but nice palette generator
 
 `quadsplitter.cs` - no idea lol. i think its a procgen thing?
 
