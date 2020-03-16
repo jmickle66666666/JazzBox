@@ -20,7 +20,9 @@ public class FollowSceneCamera : MonoBehaviour {
 	}
 	
 	void OnRenderObject () {
-		transform.position = SceneView.currentDrawingSceneView.camera.transform.position;
-		transform.rotation = SceneView.currentDrawingSceneView.camera.transform.rotation;
+		if (SceneView.currentDrawingSceneView != null) {
+			transform.position = SceneView.currentDrawingSceneView.camera.transform.position;
+			transform.rotation = SceneView.currentDrawingSceneView.camera.transform.rotation;
+		}
 	}
 }
