@@ -15,17 +15,47 @@ public class CellGen : MonoBehaviour
     [Range(0,1)]public float initialDensity = 0.5f;
 
     public string[] methods;
-    public static string[] methodNames = {
-        "Smooth", "Square", "Decay", "Feed", "Circle", "Invert"
-    };
+    public static string[] methodNames;
+
+    System.Func<int, int, bool>[] posRules;
+    System.Func<bool[,]>[] passRules;
+    
+    public Texture2D outputTexture;
+    public float genTime;
+
+    void InitData()
+    {
+        if (methods == null) methods = new string[0];
+        if (posRules == null) posRules = new System.Func<int, int, bool>[] {
+            Smooth, Square, Invert, Decay, Feed, Circle
+        };
+        if (passRules == null) passRules = new System.Func<bool[,]>[] {
+            Contiguous
+        };
+        if (methodNames == null) {
+            methodNames = new string[posRules.Length + passRules.Length];
+
+            for (int i = 0; i < posRules.Length; i++) {
+                methodNames[i] = posRules[i].Method.Name;
+            }
+
+            for (int i = 0; i < passRules.Length; i++) {
+                methodNames[posRules.Length + i] = passRules[i].Method.Name;
+            }
+        }
+    }
 
     void OnValidate()
     {
-        if (methods == null) methods = new string[0];
+        InitData();   
+
+        Generate();
     }
 
     public void Generate()
     {
+        var timer = System.Diagnostics.Stopwatch.StartNew();
+
         tiles = new bool[width, height];
         if (!randomizeSeed) Random.InitState(seed);
 
@@ -36,13 +66,32 @@ public class CellGen : MonoBehaviour
         }
 
         foreach (var m in methods) {
-            if (m == "Smooth") tiles = Pass(Smooth);
-            if (m == "Square") tiles = Pass(Square);
-            if (m == "Decay") tiles = Pass(Decay);
-            if (m == "Feed") tiles = Pass(Feed);
-            if (m == "Circle") tiles = Pass(Circle);
-            if (m == "Invert") tiles = Pass(Invert);
+            foreach (var r in posRules) {
+                if (r.Method.Name == m) {
+                    tiles = Pass(r);
+                }
+            }
+
+            foreach (var r in passRules) {
+                if (r.Method.Name == m) {
+                    tiles = Pass(r);
+                }
+            }
         }
+
+        outputTexture = new Texture2D(width, height);
+        outputTexture.filterMode = FilterMode.Point;
+        Color32[] colors = new Color32[width * height];
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                colors[(j * width) + i] = tiles[i, j]?Colors.black:Colors.white;
+            }
+        }
+        outputTexture.SetPixels32(colors);
+        outputTexture.Apply();
+
+        timer.Stop();
+        genTime = (float) timer.Elapsed.TotalMilliseconds;
     }
 
     bool[,] Pass(System.Func<int, int, bool> rule)
@@ -53,6 +102,80 @@ public class CellGen : MonoBehaviour
                 output[i, j] = rule.Invoke(i, j);
             }
         }
+        return output;
+    }
+
+    bool[,] Pass(System.Func<bool[,]> rule)
+    {
+        return rule.Invoke();
+    }
+
+    bool[,] Contiguous()
+    {
+        int[,] data = new int[width, height];
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                if (IsWall(i, j)) {
+                    data[i, j] = -1;
+                } else {
+                    data[i, j] = 0;
+                }
+            }
+        }
+
+        void FloodTile(int x, int y, int id)
+        {
+            if (x < 0) return;
+            if (y < 0) return;
+            if (x >= width) return;
+            if (y >= height) return;
+            if (data[x, y] != 0) return;
+
+            data[x, y] = id;
+
+            FloodTile(x + 1, y, id);
+            FloodTile(x - 1, y, id);
+            FloodTile(x, y + 1, id);
+            FloodTile(x, y - 1, id);
+        }
+
+        int index = 1;
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                if (data[i, j] == 0) {
+                    FloodTile(i, j, index);
+                    index += 1;
+                }
+            }
+        }
+
+        int[] counts = new int[index];
+
+        for (int i = 0; i < index; i++) {
+            counts[i] = 0;
+        }
+
+        int maxCount = 0;
+        int maxIndex = 0;
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                if (data[i, j] > 0) {
+                    counts[data[i, j]] += 1;
+                    if (counts[data[i, j]] > maxCount) {
+                        maxCount = counts[data[i, j]];
+                        maxIndex = data[i, j];
+                    } 
+                }
+            }
+        }
+
+        bool[,] output = new bool[width, height];
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                output[i, j] = data[i, j] != maxIndex;
+            }
+        }
+
         return output;
     }
 
@@ -94,7 +217,7 @@ public class CellGen : MonoBehaviour
         int halfWidth = tiles.GetLength(0)/2;
         int halfHeight = tiles.GetLength(1)/2;
         if ((Mathf.Pow(x - halfWidth, 2) + Mathf.Pow(y - halfHeight,2)) < halfWidth*halfWidth) return IsWall(x, y);
-        return false;
+        return true;
     }
 
     int Get8Count(int x, int y)
@@ -228,19 +351,10 @@ public class CellGenEditor : Editor
 
             Vector2 start = new Vector2(rect.x, rect.y);
 
-            rect.width = tileSize;
-            rect.height = tileSize;
-
-            for (int i = 0; i < width; i++) {
-                rect.x = start.x + tileSize * i;
-                for (int j = 0; j < height; j++) {
-                    rect.y = start.y + tileSize * j;
-                    GUI.DrawTexture(
-                        rect, cellGen.tiles[i,j]?blackTexture:Texture2D.whiteTexture
-                    );
-                }
-            }
+            GUI.DrawTexture(rect, cellGen.outputTexture);
         }
+
+        GUILayout.Label($"Generation time: {cellGen.genTime.ToString("0.00")}ms");
 
         serializedObject.ApplyModifiedProperties ();
     }
