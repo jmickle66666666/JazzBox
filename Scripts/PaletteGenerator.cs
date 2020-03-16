@@ -20,11 +20,11 @@ public class PaletteGenerator : MonoBehaviour
         float hueStart = Random.value;
         float hueOffset = (1f / baseColorCount);
         hueOffset *= 0.6f + Random.value * 0.4f;
+        float satRange = 0.1f + Random.value * 0.3f; // 0.1 - 0.4
+        float hueRange = 0.1f + Random.value * 0.1f; // 0.1 - 0.2
+        float valRange = 0.4f + Random.value * 0.5f; // 0.4 - 0.9
 
         for (int i = 0; i < baseColorCount; i++) {
-            float satRange = 0.1f + Random.value * 0.2f;
-            float valRange = 0.4f + Random.value * 0.4f;
-            float hueRange = 0.1f + Random.value * 0.1f;
             output.AddRange(ColorRange(RandomBaseColor(hueStart + (i * hueOffset)), shadeCount, hueRange, satRange, valRange));
         }
 
@@ -33,7 +33,11 @@ public class PaletteGenerator : MonoBehaviour
 
     Color RandomBaseColor(float hue)
     {
-        return Color.HSVToRGB(hue, 0.5f + Random.value * 0.5f, 0.8f + Random.value * 0.2f);
+        return Color.HSVToRGB(
+            hue, 
+            Random.value,               // 0 - 1
+            0.8f + Random.value * 0.2f  // 0.8 - 0.1
+        );
     }
 
     Color[] ColorRange(Color baseColor, int count, float hueRange, float satRange, float valRange)
@@ -42,13 +46,14 @@ public class PaletteGenerator : MonoBehaviour
 
         for (int i = 0; i < count; i++) {
             float hueDegrees = ((float) i / count) * hueRange;
+            float valDegrees = ((float) i / count) * valRange;
 
             float dist = (float)(i - (count/2)) / count;
 
             float satDegrees = dist * satRange;
-            float valDegrees = dist * valRange;
 
             hueDegrees -= hueRange / 2f;
+            valDegrees -= valRange / 2f;
 
             output[i] = Shift(baseColor, hueDegrees, -satDegrees, -valDegrees);
         }
@@ -77,6 +82,7 @@ public class PaletteGenerator : MonoBehaviour
     }
 }
 
+// Simple way to add a button to a thing
 #if UNITY_EDITOR
 [CustomEditor(typeof(PaletteGenerator))]
 public class PaletteGeneratorEditor : Editor
