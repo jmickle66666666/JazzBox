@@ -1,4 +1,4 @@
-﻿Shader "Jazz/VertComp"
+﻿Shader "JazzBox/VertComp"
 {
 	Properties
 	{

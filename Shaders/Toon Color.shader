@@ -1,4 +1,4 @@
-﻿Shader "Roobos/Toon"
+﻿Shader "JazzBox/Toon"
 {
     Properties
     {

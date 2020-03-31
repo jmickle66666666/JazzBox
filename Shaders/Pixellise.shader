@@ -1,4 +1,4 @@
-Shader "MSD/Pixellise" {
+Shader "JazzBox/Pixellise" {
 Properties {
 	_MainTex ("Base (RGB)", 2D) = "white" {}
 	_VSize ("Vertical Size", float) = 1.0

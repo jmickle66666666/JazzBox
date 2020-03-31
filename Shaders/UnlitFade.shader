@@ -1,4 +1,4 @@
-﻿Shader "Roobos/UnlitFade"
+﻿Shader "JazzBox/UnlitFade"
 {
     Properties
     {

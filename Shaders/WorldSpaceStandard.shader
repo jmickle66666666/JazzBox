@@ -1,4 +1,4 @@
-﻿Shader "Jazz/WorldSpaceStandard"
+﻿Shader "JazzBox/WorldSpaceStandard"
 {
     Properties
     {

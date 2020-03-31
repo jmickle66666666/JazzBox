@@ -1,4 +1,4 @@
-﻿Shader "Roobos/Overbright"
+﻿Shader "JazzBox/Overbright"
 {
     Properties
     {

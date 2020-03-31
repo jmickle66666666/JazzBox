@@ -1,4 +1,4 @@
-Shader "Jazz/WorldSpaceUnlitDepth"
+Shader "JazzBox/WorldSpaceUnlitDepth"
 {
     Properties
     {

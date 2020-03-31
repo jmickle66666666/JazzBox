@@ -1,4 +1,4 @@
-﻿Shader "Unlit/AdditiveColor"
+﻿Shader "JazzBox/AdditiveColor"
 {
     Properties
     {

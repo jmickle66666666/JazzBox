@@ -1,4 +1,4 @@
-﻿Shader "Jazz/PSX Dither"
+﻿Shader "JazzBox/PSX Dither"
 {
     Properties
     {

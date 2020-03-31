@@ -1,4 +1,4 @@
-﻿Shader "Custom/print"
+﻿Shader "JazzBox/print"
 {
     Properties
     {

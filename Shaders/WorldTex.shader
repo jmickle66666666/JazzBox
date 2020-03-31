@@ -1,4 +1,4 @@
-﻿Shader "Jazz/WorldTex"
+﻿Shader "JazzBox/WorldTex"
 {
 	Properties
 	{

@@ -1,4 +1,4 @@
-﻿Shader "Unlit/glitch"
+﻿Shader "JazzBox/glitch"
 {
     Properties
     {
