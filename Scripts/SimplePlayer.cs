@@ -8,6 +8,7 @@ public class SimplePlayer : MonoBehaviour {
 	public float moveSpeed;
 
 	private Vector3 movement;
+	public float gravity;
 
 	// Use this for initialization
 	void Start () {
@@ -27,5 +28,7 @@ public class SimplePlayer : MonoBehaviour {
 		characterController.Move(
 			movement * moveSpeed * Time.deltaTime
 		);
+
+		characterController.Move(Vector3.down * gravity * Time.deltaTime);
 	}
 }
