@@ -8,6 +8,8 @@ using UnityEditor;
 
 public class ActionButton : MonoBehaviour
 {
+    public string buttonName = "Run";
+    public bool edit = true;
     public UnityEvent action;
 
     public void Run()
@@ -22,13 +24,30 @@ public class ActionButtonInspector : Editor
 {
     public override void OnInspectorGUI()
     {
-        DrawDefaultInspector();
-
         var actionButton = (target as ActionButton);
-        if (GUILayout.Button("Run"))
-        {
-            actionButton.Run();
+
+        if (actionButton.edit) {
+            DrawDefaultInspector();
+            if (GUILayout.Button(actionButton.buttonName))
+            {
+                actionButton.Run();
+            }
+        } else {
+            GUILayout.BeginHorizontal();
+
+            if (GUILayout.Button(actionButton.buttonName))
+            {
+                actionButton.Run();
+            }
+
+            if (GUILayout.Button("Edit"))
+            {
+                actionButton.edit = true;
+            }
+
+            GUILayout.EndHorizontal();
         }
+
     }
 }
 #endif
