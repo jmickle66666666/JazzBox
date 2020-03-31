@@ -8,8 +8,8 @@ using UnityEditor;
 public class CellGen : MonoBehaviour
 {
     public bool[,] tiles;
-    public int width;
-    public int height;
+    public int width = 1;
+    public int height = 1;
     public int seed;
     public bool randomizeSeed = false;
     [Range(0,1)]public float initialDensity = 0.5f;
@@ -22,6 +22,8 @@ public class CellGen : MonoBehaviour
     
     public Texture2D outputTexture;
     public float genTime;
+
+    public bool previewGizmo = true;
 
     void InitData()
     {
@@ -48,6 +50,9 @@ public class CellGen : MonoBehaviour
     void OnValidate()
     {
         InitData();   
+
+        if (width < 1) width = 1;
+        if (height < 1) height = 1;
 
         Generate();
     }
@@ -249,6 +254,24 @@ public class CellGen : MonoBehaviour
         if (x < 0 || y < 0 || x >= width || y >= height) return offCanvas;
         return tiles[x, y];
     }
+
+    void OnDrawGizmosSelected()
+    {
+        if (!previewGizmo) return;
+        Gizmos.matrix = transform.localToWorldMatrix;
+        for (int i = 0; i < width; i++)
+        {
+            for (int j = 0; j < height; j++)
+            {
+                if (tiles[i, j]) {
+                    Gizmos.DrawCube(
+                        new Vector3(i, 0, j),
+                        Vector3.one
+                    );
+                }
+            }
+        }
+    }
 }
 
 #if UNITY_EDITOR
@@ -263,6 +286,7 @@ public class CellGenEditor : Editor
     SerializedProperty densityProp;
     SerializedProperty seedProp;
     SerializedProperty randomizeProp;
+    SerializedProperty previewGizmoProp;
 
     void OnEnable()
     {
@@ -272,6 +296,7 @@ public class CellGenEditor : Editor
         densityProp = serializedObject.FindProperty("initialDensity");
         seedProp = serializedObject.FindProperty("seed");
         randomizeProp = serializedObject.FindProperty("randomizeSeed");
+        previewGizmoProp = serializedObject.FindProperty("previewGizmo");
     }
 
     public override void OnInspectorGUI()
@@ -291,6 +316,7 @@ public class CellGenEditor : Editor
         
         }
 
+        EditorGUILayout.PropertyField(previewGizmoProp);
         EditorGUILayout.PropertyField(randomizeProp);
         if (!randomizeProp.boolValue) {
             EditorGUILayout.PropertyField(seedProp);
