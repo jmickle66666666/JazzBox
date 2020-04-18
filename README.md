@@ -33,6 +33,8 @@
 
 `palettegenerator.cs` - simple but nice palette generator
 
+`pointnoise.cs` - methods for generating random sets of points
+
 `quadsplitter.cs` - no idea lol. i think its a procgen thing?
 
 `quantizemesh.cs` - this probably does something cool
