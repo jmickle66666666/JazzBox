@@ -9,10 +9,13 @@ public class LisaX
 
     public bool running;
 
-    public LisaX(string[] data)
+    Stack<(string label, int line)> callStack;
+    (string label, int line) currentPosition;
+
+    public LisaX()
     {
         methodHooks = new Dictionary<string, (System.Action<string[]> method, bool continues)>();
-        LoadScript(data);
+        callStack = new Stack<(string, int)>();
     }
 
     public void AddMethodHook(string methodName, System.Action<string[]> method, bool continues = true)
@@ -54,13 +57,22 @@ public class LisaX
                 script[currentLabel].Add(data[i]);
             }
         }
+
+        RunLabel("START");
     }
 
-    public void RunLabel(string label) {
-        if (!script.ContainsKey(label)) return;
-        int line = 0;
+    public void RunLabel(string label, int start = 0) {
+        if (!script.ContainsKey(label)) {
+            Debug.Log($"Can't find label {label}");
+            return;
+        }
+
+        int line = start;
+        currentPosition.label = label;
+        currentPosition.line = line+1;
         while (line < script[label].Count && RunLine(script[label][line])) {
             line += 1;
+            currentPosition.line = line+1;
         }
     }
 
@@ -69,15 +81,12 @@ public class LisaX
         List<string> output = new List<string>();
         bool inQuotes = false;
 
-        foreach (var kvp in properties) {
-            line = line.Replace($"${kvp.Key};", kvp.Value);
-        }
 
         line = line.Replace("|", "\n");
 
         string currentToken = "";
         for (int i = 0; i < line.Length; i++) {
-            if (!inQuotes && line[i] == ' ') {
+            if ((!inQuotes) && line[i] == ' ') {
                 output.Add(currentToken);
                 currentToken = "";
             } else if (line[i] == '"') {
@@ -88,12 +97,19 @@ public class LisaX
         }
         output.Add(currentToken);
 
+        for (int i = 0; i < output.Count; i++) {
+            foreach (var kvp in properties) {
+                output[i] = output[i].Replace($"${kvp.Key};", kvp.Value);
+            }
+        }
+
         return output.ToArray();
     }
 
     public bool RunLine(string line)
     {
         if (line.Length == 0) return true;
+        // Debug.Log($"running line {line}");
         string[] data = ParseTokens(line);
 
         if (line.StartsWith("end")) {
@@ -113,24 +129,24 @@ public class LisaX
             }
             return true;
         } else if (line.StartsWith("add")) {
-            if (properties.ContainsKey(data[1]) && properties.ContainsKey(data[2])) {
-                properties[data[1]] = (int.Parse(properties[data[1]]) + int.Parse(properties[data[2]])).ToString();
+            if (properties.ContainsKey(data[1])) {
+                properties[data[1]] = (int.Parse(properties[data[1]]) + int.Parse(data[2])).ToString();
             } else {
                 properties.Add(data[1], "1");
             }
             return true;
         } else if (line.StartsWith("goto")) {
+            callStack.Push(currentPosition);
             RunLabel(data[1]);
             return false;
         } else if (line.StartsWith("sub")) {
-            if (properties.ContainsKey(data[1]) && properties.ContainsKey(data[2])) {
-                properties[data[1]] = (int.Parse(properties[data[1]]) - int.Parse(properties[data[2]])).ToString();
+            if (properties.ContainsKey(data[1])) {
+                properties[data[1]] = (int.Parse(properties[data[1]]) - int.Parse(data[2])).ToString();
             } else {
                 properties.Add(data[1], "1");
             }
             return true;
         } else if (line.StartsWith("set")) {
-
             if (properties.ContainsKey(data[1])) {
                 properties[data[1]] = data[2];
             } else {
@@ -143,6 +159,7 @@ public class LisaX
             if (properties.ContainsKey(data[1])) {
 
                 if (properties[data[1]] == data[2]) {
+                    callStack.Push(currentPosition);
                     RunLabel(data[3]);
                     return false;
                 }
@@ -150,6 +167,16 @@ public class LisaX
             } else {
                 return true;
             }
+        
+        } else if (line.StartsWith("return")) {
+            
+            if (callStack.Count > 0) {
+                var pos = callStack.Pop();
+                // Debug.Log($"Returning to {pos.label} {pos.line}");
+                RunLabel(pos.label, pos.line);
+                return false;
+            }
+            return false;
 
         } else if (methodHooks.ContainsKey(data[0])) {
 
