@@ -16,6 +16,54 @@ public class LisaX
     {
         methodHooks = new Dictionary<string, (System.Action<string[]> method, bool continues)>();
         callStack = new Stack<(string, int)>();
+
+        // Built-in methods
+        AddMethodHook("end", () => {}, false);
+        AddMethodHook("inc", (data) => {
+            if (properties.ContainsKey(data[1])) {
+                properties[data[1]] = (int.Parse(properties[data[1]]) + 1).ToString();
+            } else {
+                properties.Add(data[1], "1");
+            }
+        });
+        AddMethodHook("dec", (data) => {
+            if (properties.ContainsKey(data[1])) {
+                properties[data[1]] = (int.Parse(properties[data[1]]) - 1).ToString();
+            } else {
+                properties.Add(data[1], "-1");
+            }
+        });
+        AddMethodHook("add", (data) => {
+            if (properties.ContainsKey(data[1])) {
+                properties[data[1]] = (int.Parse(properties[data[1]]) + int.Parse(data[2])).ToString();
+            } else {
+                properties.Add(data[1], "1");
+            }
+        });
+        AddMethodHook("goto", (data) => {
+            callStack.Push(currentPosition);
+            RunLabel(data[1]);
+        }, false);
+        AddMethodHook("sub", (data) => {
+            if (properties.ContainsKey(data[1])) {
+                properties[data[1]] = (int.Parse(properties[data[1]]) - int.Parse(data[2])).ToString();
+            } else {
+                properties.Add(data[1], "1");
+            }
+        });
+        AddMethodHook("set", (data) => {
+            if (properties.ContainsKey(data[1])) {
+                properties[data[1]] = data[2];
+            } else {
+                properties.Add(data[1], data[2]);
+            }
+        });
+        AddMethodHook("return", (data) => {
+            if (callStack.Count > 0) {
+                var pos = callStack.Pop();
+                RunLabel(pos.label, pos.line);
+            }
+        });
     }
 
     public void AddMethodHook(string methodName, System.Action<string[]> method, bool continues = true)
@@ -112,49 +160,7 @@ public class LisaX
         // Debug.Log($"running line {line}");
         string[] data = ParseTokens(line);
 
-        if (data[0]=="end") {
-            return false;
-        } else if (data[0] == "inc") {
-            if (properties.ContainsKey(data[1])) {
-                properties[data[1]] = (int.Parse(properties[data[1]]) + 1).ToString();
-            } else {
-                properties.Add(data[1], "1");
-            }
-            return true;
-        } else if (data[0] == "dec") {
-            if (properties.ContainsKey(data[1])) {
-                properties[data[1]] = (int.Parse(properties[data[1]]) - 1).ToString();
-            } else {
-                properties.Add(data[1], "-1");
-            }
-            return true;
-        } else if (data[0] == "add") {
-            if (properties.ContainsKey(data[1])) {
-                properties[data[1]] = (int.Parse(properties[data[1]]) + int.Parse(data[2])).ToString();
-            } else {
-                properties.Add(data[1], "1");
-            }
-            return true;
-        } else if (data[0] == "goto") {
-            callStack.Push(currentPosition);
-            RunLabel(data[1]);
-            return false;
-        } else if (data[0] == "sub") {
-            if (properties.ContainsKey(data[1])) {
-                properties[data[1]] = (int.Parse(properties[data[1]]) - int.Parse(data[2])).ToString();
-            } else {
-                properties.Add(data[1], "1");
-            }
-            return true;
-        } else if (data[0] == "set") {
-            if (properties.ContainsKey(data[1])) {
-                properties[data[1]] = data[2];
-            } else {
-                properties.Add(data[1], data[2]);
-            }
-            return true;
-
-        } else if (data[0] == "if") {
+        if (data[0] == "if") {
 
             if (properties.ContainsKey(data[1])) {
 
@@ -168,16 +174,6 @@ public class LisaX
                 return true;
             }
         
-        } else if (data[0] == "return") {
-            
-            if (callStack.Count > 0) {
-                var pos = callStack.Pop();
-                // Debug.Log($"Returning to {pos.label} {pos.line}");
-                RunLabel(pos.label, pos.line);
-                return false;
-            }
-            return false;
-
         } else if (methodHooks.ContainsKey(data[0])) {
 
             methodHooks[data[0]].method.Invoke(data);
