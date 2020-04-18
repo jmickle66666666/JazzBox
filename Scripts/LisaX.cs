@@ -110,7 +110,9 @@ public class LisaX
     {
         string currentLabel = "START";
         for (int i = 0; i < data.Length; i++) {
-            if (data[i].StartsWith(":")) {
+            if (data[i].StartsWith("#")) {
+                continue;
+            } else if (data[i].StartsWith(":")) {
                 string[] tokens = data[i].Split(' ');
                 if (tokens.Length == 2) {
                     if (script.ContainsKey(tokens[1])) {
@@ -128,7 +130,7 @@ public class LisaX
 
     public void RunLabel(string label, int start = 0) {
         if (!script.ContainsKey(label)) {
-            Debug.Log($"Can't find label {label}");
+            // Debug.Log($"Can't find label {label}");
             return;
         }
 
