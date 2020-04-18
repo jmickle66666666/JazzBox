@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using System.IO;
 
 public class LisaX
 {
@@ -64,6 +65,9 @@ public class LisaX
                 RunLabel(pos.label, pos.line);
             }
         });
+        AddMethodHook("include", (data) => {
+            Include(File.ReadAllLines(data[1]));
+        });
     }
 
     public void AddMethodHook(string methodName, System.Action<string[]> method, bool continues = true)
@@ -84,14 +88,7 @@ public class LisaX
         script.Add(currentLabel, new List<string>());
 
         for (int i = 0; i < data.Length; i++) {
-            if (data[i].StartsWith("!")) {
-                string[] tokens = data[i].Split(' ');
-                if (tokens.Length >= 3) {
-                    properties.Add(tokens[1], tokens[Random.Range(2, tokens.Length)]);
-                } else {
-                    Debug.LogWarning($"Parse error at line {i}: expected >=3 tokens, got {tokens.Length}.  {data[i]}");
-                }
-            } else if (data[i].StartsWith(":")) {
+            if (data[i].StartsWith(":")) {
                 string[] tokens = data[i].Split(' ');
                 if (tokens.Length == 2) {
                     if (script.ContainsKey(tokens[1])) {
@@ -107,6 +104,26 @@ public class LisaX
         }
 
         RunLabel("START");
+    }
+
+    public void Include(string[] data)
+    {
+        string currentLabel = "START";
+        for (int i = 0; i < data.Length; i++) {
+            if (data[i].StartsWith(":")) {
+                string[] tokens = data[i].Split(' ');
+                if (tokens.Length == 2) {
+                    if (script.ContainsKey(tokens[1])) {
+                        Debug.LogWarning($"Parse error at line {i}: label {tokens[1]} already exists.  {data[i]}");
+                    } else {
+                        currentLabel = tokens[1];
+                        script.Add(tokens[1], new List<string>());
+                    }
+                }
+            } else {
+                script[currentLabel].Add(data[i]);
+            }
+        }
     }
 
     public void RunLabel(string label, int start = 0) {
@@ -157,7 +174,6 @@ public class LisaX
     public bool RunLine(string line)
     {
         if (line.Length == 0) return true;
-        // Debug.Log($"running line {line}");
         string[] data = ParseTokens(line);
 
         if (data[0] == "if") {
