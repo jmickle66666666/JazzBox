@@ -1,7 +1,11 @@
 {
-    "name": "jazzbox",
-    "references": [],
-    "includePlatforms": [],
+    "name": "jazzboxeditor",
+    "references": [
+        "GUID:7f7addc70878a47b39be579906db8934"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

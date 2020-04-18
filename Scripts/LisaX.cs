@@ -22,21 +22,21 @@ public class LisaX
         AddMethodHook("end", () => {}, false);
         AddMethodHook("inc", (data) => {
             if (properties.ContainsKey(data[1])) {
-                properties[data[1]] = (int.Parse(properties[data[1]]) + 1).ToString();
+                properties[data[1]] = (float.Parse(properties[data[1]]) + 1).ToString();
             } else {
                 properties.Add(data[1], "1");
             }
         });
         AddMethodHook("dec", (data) => {
             if (properties.ContainsKey(data[1])) {
-                properties[data[1]] = (int.Parse(properties[data[1]]) - 1).ToString();
+                properties[data[1]] = (float.Parse(properties[data[1]]) - 1).ToString();
             } else {
                 properties.Add(data[1], "-1");
             }
         });
         AddMethodHook("add", (data) => {
             if (properties.ContainsKey(data[1])) {
-                properties[data[1]] = (int.Parse(properties[data[1]]) + int.Parse(data[2])).ToString();
+                properties[data[1]] = (float.Parse(properties[data[1]]) + float.Parse(data[2])).ToString();
             } else {
                 properties.Add(data[1], "1");
             }
@@ -47,7 +47,7 @@ public class LisaX
         }, false);
         AddMethodHook("sub", (data) => {
             if (properties.ContainsKey(data[1])) {
-                properties[data[1]] = (int.Parse(properties[data[1]]) - int.Parse(data[2])).ToString();
+                properties[data[1]] = (float.Parse(properties[data[1]]) - float.Parse(data[2])).ToString();
             } else {
                 properties.Add(data[1], "1");
             }
@@ -69,9 +69,9 @@ public class LisaX
             Include(File.ReadAllLines(data[1]));
         });
         AddMethodHook("random", (data) => {
-            int min = int.Parse(data[2]);
-            int max = int.Parse(data[3]);
-            int random = Random.Range(min, max);
+            float min = float.Parse(data[2]);
+            float max = float.Parse(data[3]);
+            var random = Random.Range(min, max);
             if (properties.ContainsKey(data[1])) {
                 properties[data[1]] = random.ToString();
             } else {
@@ -214,5 +214,10 @@ public class LisaX
         }
 
         return true;
+    }
+
+    public static float GetFloatValue(string value)
+    {
+        return (float) float.Parse(value);
     }
 }
