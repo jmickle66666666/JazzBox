@@ -112,41 +112,41 @@ public class LisaX
         // Debug.Log($"running line {line}");
         string[] data = ParseTokens(line);
 
-        if (line.StartsWith("end")) {
+        if (data[0]=="end") {
             return false;
-        } else if (line.StartsWith("inc")) {
+        } else if (data[0] == "inc") {
             if (properties.ContainsKey(data[1])) {
                 properties[data[1]] = (int.Parse(properties[data[1]]) + 1).ToString();
             } else {
                 properties.Add(data[1], "1");
             }
             return true;
-        } else if (line.StartsWith("dec")) {
+        } else if (data[0] == "dec") {
             if (properties.ContainsKey(data[1])) {
                 properties[data[1]] = (int.Parse(properties[data[1]]) - 1).ToString();
             } else {
                 properties.Add(data[1], "-1");
             }
             return true;
-        } else if (line.StartsWith("add")) {
+        } else if (data[0] == "add") {
             if (properties.ContainsKey(data[1])) {
                 properties[data[1]] = (int.Parse(properties[data[1]]) + int.Parse(data[2])).ToString();
             } else {
                 properties.Add(data[1], "1");
             }
             return true;
-        } else if (line.StartsWith("goto")) {
+        } else if (data[0] == "goto") {
             callStack.Push(currentPosition);
             RunLabel(data[1]);
             return false;
-        } else if (line.StartsWith("sub")) {
+        } else if (data[0] == "sub") {
             if (properties.ContainsKey(data[1])) {
                 properties[data[1]] = (int.Parse(properties[data[1]]) - int.Parse(data[2])).ToString();
             } else {
                 properties.Add(data[1], "1");
             }
             return true;
-        } else if (line.StartsWith("set")) {
+        } else if (data[0] == "set") {
             if (properties.ContainsKey(data[1])) {
                 properties[data[1]] = data[2];
             } else {
@@ -154,7 +154,7 @@ public class LisaX
             }
             return true;
 
-        } else if (line.StartsWith("if")) {
+        } else if (data[0] == "if") {
 
             if (properties.ContainsKey(data[1])) {
 
@@ -168,7 +168,7 @@ public class LisaX
                 return true;
             }
         
-        } else if (line.StartsWith("return")) {
+        } else if (data[0] == "return") {
             
             if (callStack.Count > 0) {
                 var pos = callStack.Pop();
