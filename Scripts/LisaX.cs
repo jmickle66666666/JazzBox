@@ -68,6 +68,16 @@ public class LisaX
         AddMethodHook("include", (data) => {
             Include(File.ReadAllLines(data[1]));
         });
+        AddMethodHook("random", (data) => {
+            int min = int.Parse(data[2]);
+            int max = int.Parse(data[3]);
+            int random = Random.Range(min, max);
+            if (properties.ContainsKey(data[1])) {
+                properties[data[1]] = random.ToString();
+            } else {
+                properties.Add(data[1], random.ToString());
+            }
+        });
     }
 
     public void AddMethodHook(string methodName, System.Action<string[]> method, bool continues = true)
@@ -88,7 +98,9 @@ public class LisaX
         script.Add(currentLabel, new List<string>());
 
         for (int i = 0; i < data.Length; i++) {
-            if (data[i].StartsWith(":")) {
+            if (data[i].StartsWith("#")) {
+                continue;
+            } else if (data[i].StartsWith(":")) {
                 string[] tokens = data[i].Split(' ');
                 if (tokens.Length == 2) {
                     if (script.ContainsKey(tokens[1])) {
