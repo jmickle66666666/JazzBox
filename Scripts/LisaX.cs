@@ -54,6 +54,9 @@ public class LisaX
         AddMethodHook("div", (data) => {
             properties[data[1]] = (float.Parse(properties[data[1]]) / float.Parse(data[2])).ToString();
         });
+        AddMethodHook("pow", (data) => {
+            properties[data[1]] = Mathf.Pow(float.Parse(properties[data[1]]), float.Parse(data[2])).ToString();
+        });
         AddMethodHook("goto", (data) => {
             callStack.Push(currentPosition);
             RunLabel(data[1]);
