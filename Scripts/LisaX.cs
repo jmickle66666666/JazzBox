@@ -41,10 +41,6 @@ public class LisaX
                 properties.Add(data[1], "1");
             }
         });
-        AddMethodHook("goto", (data) => {
-            callStack.Push(currentPosition);
-            RunLabel(data[1]);
-        }, false);
         AddMethodHook("sub", (data) => {
             if (properties.ContainsKey(data[1])) {
                 properties[data[1]] = (float.Parse(properties[data[1]]) - float.Parse(data[2])).ToString();
@@ -52,6 +48,16 @@ public class LisaX
                 properties.Add(data[1], "1");
             }
         });
+        AddMethodHook("mul", (data) => {
+            properties[data[1]] = (float.Parse(properties[data[1]]) * float.Parse(data[2])).ToString();
+        });
+        AddMethodHook("div", (data) => {
+            properties[data[1]] = (float.Parse(properties[data[1]]) / float.Parse(data[2])).ToString();
+        });
+        AddMethodHook("goto", (data) => {
+            callStack.Push(currentPosition);
+            RunLabel(data[1]);
+        }, false);
         AddMethodHook("set", (data) => {
             if (properties.ContainsKey(data[1])) {
                 properties[data[1]] = data[2];
