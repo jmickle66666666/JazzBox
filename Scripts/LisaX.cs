@@ -2,11 +2,20 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 
+public struct LisaXMethodHook
+{
+    public string name;
+    public string description;
+
+    public System.Action<string[]> method;
+    public bool continues;
+}
+
 public class LisaX
 {
     Dictionary<string, List<string>> script;
     public Dictionary<string, string> properties;
-    public Dictionary<string, (System.Action<string[]> method, bool continues)> methodHooks; 
+    public Dictionary<string, LisaXMethodHook> methodHooks; 
 
     public bool running;
 
@@ -15,68 +24,68 @@ public class LisaX
 
     public LisaX()
     {
-        methodHooks = new Dictionary<string, (System.Action<string[]> method, bool continues)>();
+        methodHooks = new Dictionary<string, LisaXMethodHook>();
         callStack = new Stack<(string, int)>();
 
         // Built-in methods
-        AddMethodHook("end", () => {}, false);
+        AddMethodHook("end", () => {}, false, "Stops execution! Scripts will already stop when they run out of commands but this can be used to add clarity or add a breakpoint.");
         AddMethodHook("inc", (data) => {
             if (properties.ContainsKey(data[1])) {
                 properties[data[1]] = (float.Parse(properties[data[1]]) + 1).ToString();
             } else {
                 properties.Add(data[1], "1");
             }
-        });
+        }, "Usage: `inc [value]`\nIncreases a value by one. Useful for counters or loops. Equivalent to `add val 1`. If value doesn't exist, it is created and set to 1.");
         AddMethodHook("dec", (data) => {
             if (properties.ContainsKey(data[1])) {
                 properties[data[1]] = (float.Parse(properties[data[1]]) - 1).ToString();
             } else {
                 properties.Add(data[1], "-1");
             }
-        });
+        }, "Usage: `dec [value]`\nDecreases a value by one. Useful for counters or loops. Equivalent to `sub val 1`. If value doesn't exist, it is created and set to -1.");
         AddMethodHook("add", (data) => {
             if (properties.ContainsKey(data[1])) {
                 properties[data[1]] = (float.Parse(properties[data[1]]) + float.Parse(data[2])).ToString();
             } else {
-                properties.Add(data[1], "1");
+                properties.Add(data[1], float.Parse(data[2]).ToString());
             }
-        });
+        }, "Usage: `add [value] [amount]`\nAdds amount to value. If value doesn't exist, it is created and set to [amount].");
         AddMethodHook("sub", (data) => {
             if (properties.ContainsKey(data[1])) {
                 properties[data[1]] = (float.Parse(properties[data[1]]) - float.Parse(data[2])).ToString();
             } else {
-                properties.Add(data[1], "1");
+                properties.Add(data[1], (-float.Parse(data[2])).ToString());
             }
-        });
+        }, "Usage: `sub [value] [amount]`\nSubtracts amount from value. If value doesn't exist, it is created and set to -[amount].");
         AddMethodHook("mul", (data) => {
             properties[data[1]] = (float.Parse(properties[data[1]]) * float.Parse(data[2])).ToString();
-        });
+        }, "Usage: `mul [value] [amount]`");
         AddMethodHook("div", (data) => {
             properties[data[1]] = (float.Parse(properties[data[1]]) / float.Parse(data[2])).ToString();
-        });
+        }, "Usage: `div [value] [amount]`");
         AddMethodHook("pow", (data) => {
             properties[data[1]] = Mathf.Pow(float.Parse(properties[data[1]]), float.Parse(data[2])).ToString();
-        });
+        }, "Usage: `pow [value] [amount]`");
         AddMethodHook("goto", (data) => {
             callStack.Push(currentPosition);
             RunLabel(data[1]);
-        }, false);
+        }, false, "Usage: `goto [label]`\nStops current label and runs the given one. Stores the current position, which can be returned to using `return`");
         AddMethodHook("set", (data) => {
             if (properties.ContainsKey(data[1])) {
                 properties[data[1]] = data[2];
             } else {
                 properties.Add(data[1], data[2]);
             }
-        });
+        }, "Usage: `set [value] [amount]`\nSets the given value to [amount]. If it doesn't exist it is created first.`");
         AddMethodHook("return", (data) => {
             if (callStack.Count > 0) {
                 var pos = callStack.Pop();
                 RunLabel(pos.label, pos.line);
             }
-        });
+        }, "Usage: `return`\nReturns to the last time execution was jumped, from an `if` or `goto`. Used for running some code, then continuing where you left off.");
         AddMethodHook("include", (data) => {
             Include(File.ReadAllLines(data[1]));
-        });
+        }, "Usage: `include [path_to_script]`\nAdds all the labels from another script into this script, so they can be called. Code outside of a label is not run automatically. Make sure the labels in the included script don't already exist in the current one.");
         AddMethodHook("random", (data) => {
             float min = float.Parse(data[2]);
             float max = float.Parse(data[3]);
@@ -86,17 +95,57 @@ public class LisaX
             } else {
                 properties.Add(data[1], random.ToString());
             }
+        }, "Usage: `random [value] [min] [max]`\nGenerates a random value between min and max, and stores it in [value]. Both min and max are inclusive, meaning they can be generated.");
+    }
+
+    public void AddMethodHook(string methodName, System.Action<string[]> method, string description)
+    {
+        AddMethodHook(methodName, method, true, description);
+    }
+
+    public void AddMethodHook(string methodName, System.Action<string[]> method, bool continues = true, string description = "")
+    {
+        methodHooks.Add(methodName, new LisaXMethodHook() {
+            name = methodName,
+            method = method,
+            continues = continues,
+            description = description
         });
     }
 
-    public void AddMethodHook(string methodName, System.Action<string[]> method, bool continues = true)
+    public void AddMethodHook(string methodName, System.Action method, string description)
     {
-        methodHooks.Add(methodName, (method, continues));
+        AddMethodHook(methodName, method, true, description);
     }
 
-    public void AddMethodHook(string methodName, System.Action method, bool continues = true)
+    public void AddMethodHook(string methodName, System.Action method, bool continues = true, string description = "")
     {
-        methodHooks.Add(methodName, ((data) => {method.Invoke();}, continues));
+        methodHooks.Add(methodName, new LisaXMethodHook() {
+            name = methodName,
+            method = (data) => { method.Invoke(); },
+            continues = continues,
+            description = description
+        });
+    }
+
+    public string GenerateDocs()
+    {
+        string output = "";
+        output += "# LisaX Script Documentation\n";
+        output += "## Auto-Generated\n";
+        foreach (var m in methodHooks) {
+            output += $"\n## {m.Value.name}\n";
+            if (!m.Value.continues) {
+                output += "Stops the script\n";
+            }
+            if (m.Value.description == "") {
+                Debug.LogWarning($"No description for method {m.Value.name}");
+                output += $"No description available\n";
+            } else {
+                output += $"Description: {m.Value.description}\n";
+            }
+        }
+        return output;
     }
 
     public void LoadScript(string[] data)
