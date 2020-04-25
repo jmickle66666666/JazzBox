@@ -2,13 +2,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 
-public enum LisaXParameter
+public struct LisaXParameter
 {
-    Label,
-    Variable,
-    Value,
-    String,
-    Float
+    public const int Label = 0;
+    public const int Variable = 1;
+    public const int Value = 2;
+    public const int String = 3;
+    public const int Float = 4;
 }
 
 public struct LisaXMethodHook
@@ -19,7 +19,7 @@ public struct LisaXMethodHook
     public System.Action<string[]> method;
     public bool continues;
 
-    public LisaXParameter[] parameters;
+    public int[] parameters;
 }
 
 public class LisaX
@@ -71,16 +71,6 @@ public class LisaX
                 }
             }, 
             "Returns to the last time execution was jumped, from an `if` or `goto`. Used for running some code, then continuing where you left off."
-        );
-
-        AddMethodHook(
-            "include", 
-            (data) => {
-                Include(File.ReadAllLines(data[1]));
-            }, 
-            true, 
-            "Adds all the labels from another script into this script, so they can be called. Code outside of a label is not run automatically. Make sure the labels in the included script don't already exist in the current one.",
-            LisaXParameter.String
         );
         
         // Mathematics
@@ -193,11 +183,11 @@ public class LisaX
     }
 
 
-    public void AddMethodHook(string methodName, System.Action method, string description, params LisaXParameter[] parameters)
+    public void AddMethodHook(string methodName, System.Action method, string description, params int[] parameters)
     {
         AddMethodHook(methodName, method, true, description, parameters);
     }
-    public void AddMethodHook(string methodName, System.Action method, bool continues = true, string description = "", params LisaXParameter[] parameters)
+    public void AddMethodHook(string methodName, System.Action method, bool continues = true, string description = "", params int[] parameters)
     {
         methodHooks.Add(methodName, new LisaXMethodHook() {
             name = methodName,
@@ -207,11 +197,11 @@ public class LisaX
             parameters = parameters
         });
     }
-    public void AddMethodHook(string methodName, System.Action<string[]> method, string description, params LisaXParameter[] parameters)
+    public void AddMethodHook(string methodName, System.Action<string[]> method, string description, params int[] parameters)
     {
         AddMethodHook(methodName, method, true, description, parameters);
     }
-    public void AddMethodHook(string methodName, System.Action<string[]> method, bool continues = true, string description = "", params LisaXParameter[] parameters)
+    public void AddMethodHook(string methodName, System.Action<string[]> method, bool continues = true, string description = "", params int[] parameters)
     {
         methodHooks.Add(methodName, new LisaXMethodHook() {
             name = methodName,
@@ -371,7 +361,7 @@ public class LisaX
             }
         
         } else if (methodHooks.ContainsKey(data[0])) {
-            
+
             if (data.Length != methodHooks[data[0]].parameters.Length + 1) {
                 WriteError(currentPosition.label, currentPosition.line, data, $"Incorrect number of arguments for method {data[0]}. Expected {methodHooks[data[0]].parameters.Length} things but got {data.Length - 1} !! :(");
                 return false;
