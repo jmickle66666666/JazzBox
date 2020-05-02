@@ -2,7 +2,7 @@
 {
     Properties
     {
-        _MainTex ("Texture", 2D) = "white" {}
+        _MainTex ("Texture", 2D) = "red" {}
         _DitherPattern("Dither", 2D) = "black" {}
         _Colors ("Color Depth", float) = 32
     }

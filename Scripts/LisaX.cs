@@ -4,11 +4,14 @@ using System.IO;
 
 public struct LisaXParameter
 {
-    public const int Label = 0;
-    public const int Variable = 1;
-    public const int Value = 2;
-    public const int String = 3;
-    public const int Float = 4;
+    public const int Method = 0;
+    public const int Label = 1;
+    public const int Variable = 2;
+    public const int Value = 3;
+    public const int String = 4;
+    public const int Float = 5;
+    public const int Comment = 6;
+    public const int LabelIdent = 7;
 }
 
 public struct LisaXMethodHook
@@ -318,9 +321,11 @@ public class LisaX
         }
         output.Add(currentToken);
 
-        for (int i = 0; i < output.Count; i++) {
-            foreach (var kvp in properties) {
-                output[i] = output[i].Replace($"${kvp.Key};", kvp.Value);
+        if (properties != null) {
+            for (int i = 0; i < output.Count; i++) {
+                foreach (var kvp in properties) {
+                    output[i] = output[i].Replace($"${kvp.Key};", kvp.Value);
+                }
             }
         }
 
