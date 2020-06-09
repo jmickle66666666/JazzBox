@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
+using System.Text;
 
 public struct LisaXParameter
 {
@@ -302,34 +303,49 @@ public class LisaX
 
     public string[] ParseTokens(string line)
     {
-        List<string> output = new List<string>();
+        List<StringBuilder> output = new List<StringBuilder>();
         bool inQuotes = false;
-
 
         line = line.Replace("|", "\n");
 
-        string currentToken = "";
+
+        StringBuilder currentToken = new StringBuilder("");
         for (int i = 0; i < line.Length; i++) {
             if ((!inQuotes) && line[i] == ' ') {
                 output.Add(currentToken);
-                currentToken = "";
+                currentToken = new StringBuilder("");
             } else if (line[i] == '"') {
                 inQuotes = !inQuotes;
             } else {
-                currentToken += line[i];
+                currentToken.Append(line[i]);
             }
         }
         output.Add(currentToken);
 
+        string[] outputStrings = new string[output.Count];
+        for (int i = 0; i < output.Count; i++) {
+            outputStrings[i] = output[i].ToString();
+        }
+
         if (properties != null) {
-            for (int i = 0; i < output.Count; i++) {
-                foreach (var kvp in properties) {
-                    output[i] = output[i].Replace($"${kvp.Key};", kvp.Value);
+            bool replaced = true;
+            foreach (var kvp in properties) {
+                // var keystring = string.Join("", new [] {"$", kvp.Key, ";"});
+                var keystring = "$"+kvp.Key+";";
+                replaced = true;
+                while (replaced) {
+                    replaced = false;
+                    for (int i = 0; i < outputStrings.Length; i++) {
+                        var prev = outputStrings[i].GetHashCode();
+                        outputStrings[i] = outputStrings[i].Replace(keystring, kvp.Value);
+                        if (prev != outputStrings[i].GetHashCode()) replaced = true;
+                    }
                 }
             }
         }
 
-        return output.ToArray();
+
+        return outputStrings;
     }
 
     public bool RunLine(string line)
