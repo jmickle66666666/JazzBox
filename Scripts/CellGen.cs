@@ -62,7 +62,10 @@ public class CellGen : MonoBehaviour
         var timer = System.Diagnostics.Stopwatch.StartNew();
 
         tiles = new bool[width, height];
-        if (!randomizeSeed) Random.InitState(seed);
+        if (randomizeSeed) {
+            seed = Mathf.FloorToInt(Mathf.Sin(System.DateTime.Now.Millisecond * 12356.13246f) * 2346.3567f);
+        }
+        Random.InitState(seed);
 
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {

@@ -24,11 +24,46 @@ public struct LisaXMethodHook
     public bool continues;
 
     public int[] parameters;
+
+    public bool virtualMethod;
+    public string[] parameterNames;
+}
+
+public struct LisaXLine
+{
+    public string methodName;
+    public LisaXMethodHook methodHook;
+    public LisaXToken[] tokens;
+    public string[] stringTokens;
+    public string unparsedLine;
+
+    public static LisaXLine NONE = new LisaXLine() {
+        methodName = "",
+        tokens = new LisaXToken[0],
+        unparsedLine = "",
+        stringTokens = new string[0]
+    };
+
+    public bool hasValueOf;
+}
+
+public struct LisaXToken
+{
+    public enum TokenType {
+        Number,
+        String,
+        ValueOf
+    }
+
+    public TokenType type;
+    public float numberValue;
+    public string stringValue;
+    public string valueName;
 }
 
 public class LisaX
 {
-    Dictionary<string, List<string>> script;
+    Dictionary<string, List<LisaXLine>> script;
     public Dictionary<string, string> properties;
     public Dictionary<string, LisaXMethodHook> methodHooks; 
 
@@ -39,6 +74,17 @@ public class LisaX
 
     static string errorFilePath = "it broke.txt";
 
+    public List<(string type, int id)> parameterTypes = new List<(string type, int id)>() {
+        ("Method", 0),
+        ("Label", 1),
+        ("Variable", 2),
+        ("Value", 3),
+        ("String", 4),
+        ("Float", 5),
+        ("Comment", 6),
+        ("LabelIdent", 7)
+    };
+
     public LisaX()
     {
         methodHooks = new Dictionary<string, LisaXMethodHook>();
@@ -47,6 +93,48 @@ public class LisaX
         // Built-in methods
 
         // Script Control
+
+        AddMethodHook(
+            "if",
+            (data) => {
+                callStack.Push(currentPosition);
+                if (properties.ContainsKey(data[1])) {
+                    if (properties[data[1]] == data[2]) {
+                        RunLabel(data[3]);
+                    } else {
+                        var pos = callStack.Pop();
+                        RunLabel(pos.label, pos.line);
+                    }
+                } else {
+                    var pos = callStack.Pop();
+                    RunLabel(pos.label, pos.line);
+                }
+            },
+            false,
+            "check stuff",
+            LisaXParameter.Variable, LisaXParameter.Value, LisaXParameter.Label
+        );
+
+        AddMethodHook(
+            "ifgreater",
+            (data) => {
+                callStack.Push(currentPosition);
+                if (properties.ContainsKey(data[1])) {
+                    if (float.Parse(properties[data[1]]) > float.Parse(data[2])) {
+                        RunLabel(data[3]);
+                    } else {
+                        var pos = callStack.Pop();
+                        RunLabel(pos.label, pos.line);
+                    }
+                } else {
+                    var pos = callStack.Pop();
+                    RunLabel(pos.label, pos.line);
+                }
+            },
+            false,
+            "check stuff",
+            LisaXParameter.Variable, LisaXParameter.Value, LisaXParameter.Label
+        );
 
         AddMethodHook(
             "end", 
@@ -79,7 +167,8 @@ public class LisaX
         
         // Mathematics
 
-        AddMethodHook("set", 
+        AddMethodHook(
+            "set", 
             (data) => {
                 if (properties.ContainsKey(data[1])) {
                     properties[data[1]] = data[2];
@@ -105,23 +194,43 @@ public class LisaX
             "Adds amount to value. If value doesn't exist, it is created and set to [amount].",
             LisaXParameter.Variable, LisaXParameter.Float
         );
-        
+
         AddMethodHook(
-            "sub", 
+            "length",
             (data) => {
                 if (properties.ContainsKey(data[1])) {
-                    properties[data[1]] = (float.Parse(properties[data[1]]) - float.Parse(data[2])).ToString();
+                    properties[data[1]] = data[2].Length.ToString();
                 } else {
-                    properties.Add(data[1], (-float.Parse(data[2])).ToString());
+                    properties.Add(data[1], data[2].Length.ToString());
                 }
             },
-            "Subtracts amount from value. If value doesn't exist, it is created and set to -[amount].",
-            LisaXParameter.Variable, LisaXParameter.Float
+            true,
+            "Sets the length of arg 2 to arg 1",
+            LisaXParameter.Variable, LisaXParameter.String
         );
+        
+        // AddMethodHook(
+        //     "sub", 
+        //     (data) => {
+        //         if (properties.ContainsKey(data[1])) {
+        //             properties[data[1]] = (float.Parse(properties[data[1]]) - float.Parse(data[2])).ToString();
+        //         } else {
+        //             properties.Add(data[1], (-float.Parse(data[2])).ToString());
+        //         }
+        //     },
+        //     "Subtracts amount from value. If value doesn't exist, it is created and set to -[amount].",
+        //     LisaXParameter.Variable, LisaXParameter.Float
+        // );
         
         AddMethodHook(
             "mul", 
             (data) => {
+                // Debug.Log($"{data[0]} {data[1]} {data[2]}");
+                // if (!properties.ContainsKey(data[1])) {
+                //     Debug.Log("Heck");
+                // } else {
+                //     Debug.Log($"prop {properties[data[1]]}");
+                // }
                 properties[data[1]] = (float.Parse(properties[data[1]]) * float.Parse(data[2])).ToString();
             }, 
             "Multiplies a variable by a given amount",
@@ -186,11 +295,11 @@ public class LisaX
         );
     }
 
-
     public void AddMethodHook(string methodName, System.Action method, string description, params int[] parameters)
     {
         AddMethodHook(methodName, method, true, description, parameters);
     }
+    
     public void AddMethodHook(string methodName, System.Action method, bool continues = true, string description = "", params int[] parameters)
     {
         methodHooks.Add(methodName, new LisaXMethodHook() {
@@ -238,30 +347,118 @@ public class LisaX
 
     public void LoadScript(string[] data)
     {
-        script = new Dictionary<string, List<string>>();
+        script = new Dictionary<string, List<LisaXLine>>();
         properties = new Dictionary<string, string>();
         string currentLabel = "START";
-        script.Add(currentLabel, new List<string>());
+        script.Add(currentLabel, new List<LisaXLine>());
 
         for (int i = 0; i < data.Length; i++) {
             if (data[i].StartsWith("#")) {
                 continue;
             } else if (data[i].StartsWith(":")) {
+
                 string[] tokens = data[i].Split(' ');
                 if (tokens.Length == 2) {
                     if (script.ContainsKey(tokens[1])) {
-                        Debug.LogWarning($"Parse error at line {i}: label {tokens[1]} already exists.  {data[i]}");
+                        // Debug.LogWarning($"Parse error at line {i}: label {tokens[1]} already exists.  {data[i]}");
+                        currentLabel = tokens[1];
                     } else {
                         currentLabel = tokens[1];
-                        script.Add(tokens[1], new List<string>());
+                        script.Add(tokens[1], new List<LisaXLine>());
                     }
                 }
+
+            } else if (data[i].StartsWith("!")) {
+
+                string[] tokens = data[i].Split(' ');
+
+                string[] paramNames = new string[tokens.Length-2];
+                int[] paramTypes = new int[tokens.Length-2];
+                for (int t = 2; t < tokens.Length; t++) {
+                    string[] param = tokens[t].Substring(0, tokens[t].Length-1).Split('<');
+                    string paramName = param[0];
+                    string paramType = param[1];
+                    paramNames[t-2] = paramName;
+                    paramTypes[t-2] = FindParameterIndex(paramType);
+                }
+
+                var virtualMethod = new LisaXMethodHook() {
+                    parameterNames = paramNames,
+                    virtualMethod = true,
+                    parameters = paramTypes,
+                    name = tokens[1],
+                    continues = false
+                };
+
+                methodHooks.Add(tokens[1], virtualMethod);
+
+                currentLabel = tokens[1];
+                script.Add(tokens[1], new List<LisaXLine>());
+
             } else {
-                script[currentLabel].Add(data[i]);
+                script[currentLabel].Add(ParseLine(data[i]));
             }
         }
 
         RunLabel("START");
+    }
+
+    public LisaXLine ParseLine(string line)
+    {
+        string[] tokens = ParseTokens(line.Trim(' '), true);
+
+        string methodName = tokens[0];
+        if (methodHooks.ContainsKey(methodName) || methodName == "if" || methodName == "ifgreater") {
+            var methodHook = methodHooks[methodName];
+
+            var ltokens = new LisaXToken[methodHook.parameters.Length + 1];
+            ltokens[0] = new LisaXToken() { type = LisaXToken.TokenType.String, stringValue = methodName };
+            bool hasValueOf = false;
+            for (int i = 0; i < methodHook.parameters.Length; i++)
+            {
+                LisaXToken token;
+                if (float.TryParse(tokens[i+1], out float result)) {
+                    token = new LisaXToken() {
+                        type = LisaXToken.TokenType.Number,
+                        numberValue = result
+                    };
+                } else {
+                    if (tokens[i+1].Contains("$") && tokens[i+1].Contains(";")) {
+                        hasValueOf = true;
+                        token = new LisaXToken() {
+                            type = LisaXToken.TokenType.ValueOf,
+                            valueName = tokens[i+1]
+                        };
+                    } else {
+                        token = new LisaXToken() {
+                            type = LisaXToken.TokenType.String,
+                            stringValue = tokens[i+1]
+                        };
+                    }
+                }
+
+                ltokens[i + 1] = token;
+            }
+
+            LisaXLine output = new LisaXLine() {
+                methodHook = methodHook,
+                methodName = methodName,
+                tokens = ltokens,
+                stringTokens = tokens,
+                hasValueOf = hasValueOf,
+                unparsedLine = line
+            };
+
+            return output;
+        }
+
+        return new LisaXLine() {
+            hasValueOf = line.Contains("$") && line.Contains(";"),
+            methodName = methodName,
+            stringTokens = tokens,
+            unparsedLine = line
+        };
+        // return LisaXLine.NONE;
     }
 
     public void Include(string[] data)
@@ -274,21 +471,58 @@ public class LisaX
                 string[] tokens = data[i].Split(' ');
                 if (tokens.Length == 2) {
                     if (script.ContainsKey(tokens[1])) {
-                        Debug.LogWarning($"Parse error at line {i}: label {tokens[1]} already exists.  {data[i]}");
+                        currentLabel = tokens[1];
+                        // Debug.LogWarning($"Parse error at line {i}: label {tokens[1]} already exists.  {data[i]}");
                     } else {
                         currentLabel = tokens[1];
-                        script.Add(tokens[1], new List<string>());
+                        script.Add(tokens[1], new List<LisaXLine>());
                     }
                 }
+            } else if (data[i].StartsWith("!")) {
+
+                string[] tokens = data[i].Split(' ');
+
+                string[] paramNames = new string[tokens.Length-2];
+                int[] paramTypes = new int[tokens.Length-2];
+                for (int t = 2; t < tokens.Length; t++) {
+                    string[] param = tokens[t].Substring(0, tokens[t].Length-1).Split('<');
+                    string paramName = param[0];
+                    string paramType = param[1];
+                    paramNames[t-2] = paramName;
+                    paramTypes[t-2] = FindParameterIndex(paramType);
+                }
+
+                var virtualMethod = new LisaXMethodHook() {
+                    parameterNames = paramNames,
+                    virtualMethod = true,
+                    parameters = paramTypes,
+                    name = tokens[1],
+                    continues = false
+                };
+
+                methodHooks.Add(tokens[1], virtualMethod);
+                // Debug.Log($"Including virtual method {tokens[1]}");
+                currentLabel = tokens[1];
+                script.Add(tokens[1], new List<LisaXLine>());
+
             } else {
-                script[currentLabel].Add(data[i]);
+                script[currentLabel].Add(ParseLine(data[i]));
             }
         }
+
+        // Debug.Log($"{methodHooks["add2"].virtualMethod}");
+    }
+
+    int FindParameterIndex(string type)
+    {
+        foreach (var p in parameterTypes) {
+            if (p.type == type) return p.id;
+        }
+        return -1;
     }
 
     public void RunLabel(string label, int start = 0) {
         if (!script.ContainsKey(label)) {
-            // Debug.Log($"Can't find label {label}");
             return;
         }
 
@@ -301,7 +535,7 @@ public class LisaX
         }
     }
 
-    public string[] ParseTokens(string line)
+    public string[] ParseTokens(string line, bool skipProps = false)
     {
         List<StringBuilder> output = new List<StringBuilder>();
         bool inQuotes = false;
@@ -327,10 +561,9 @@ public class LisaX
             outputStrings[i] = output[i].ToString();
         }
 
-        if (properties != null) {
+        if (properties != null && !skipProps) {
             bool replaced = true;
             foreach (var kvp in properties) {
-                // var keystring = string.Join("", new [] {"$", kvp.Key, ";"});
                 var keystring = "$"+kvp.Key+";";
                 replaced = true;
                 while (replaced) {
@@ -344,80 +577,66 @@ public class LisaX
             }
         }
 
-
         return outputStrings;
     }
 
-    public bool RunLine(string line)
+    public string ParseToken(string token)
     {
-        if (line.Length == 0) return true;
-        string[] data = ParseTokens(line.Trim(' '));
-
-        if (data[0] == "if") {
-
-            if (properties.ContainsKey(data[1])) {
-
-                if (properties[data[1]] == data[2]) {
-                    callStack.Push(currentPosition);
-                    RunLabel(data[3]);
-                    return false;
-                }
-
-            } else {
-                return true;
+        // new
+        if (token.Contains("$") && token.Contains(";")) {
+            int start = token.LastIndexOf('$');
+            int end = token.IndexOf(';');
+            string innerToken = token.Substring(
+                start+1,
+                end - start - 1
+            );
+            if (properties.ContainsKey(innerToken)) {
+                return ParseToken(token.Replace("$"+innerToken+";", properties[innerToken]));
             }
-        
-        } else if (data[0] == "ifgreater") {
+        }
+        return token;
+    }
 
-            if (properties.ContainsKey(data[1])) {
+    public bool RunLine(LisaXLine line)
+    {
+        if (line.unparsedLine.StartsWith("#")) return true;
+        if (line.unparsedLine.Length == 0) return true;
+        if (line.methodName == "") return true;
 
-                if (float.Parse(properties[data[1]]) > float.Parse(data[2])) {
-                    callStack.Push(currentPosition);
-                    RunLabel(data[3]);
-                    return false;
-                }
-
-            } else {
-                return true;
-            }
-        
-        } else if (methodHooks.ContainsKey(data[0])) {
-
-            if (data.Length != methodHooks[data[0]].parameters.Length + 1) {
-                WriteError(currentPosition.label, currentPosition.line, data, $"Incorrect number of arguments for method {data[0]}. Expected {methodHooks[data[0]].parameters.Length} things but got {data.Length - 1} !! :(");
-                return false;
-            }
-
-            for (int i = 0; i < data.Length-1; i++) {
-                string numbered = i.ToString() + "th";
-                if (i == 1) numbered = "1st";
-                if (i == 2) numbered = "2nd";
-                if (i == 3) numbered = "3rd";
-                switch (methodHooks[data[0]].parameters[i]) {
-                    case LisaXParameter.Float:
-                        if (!float.TryParse(data[i+1], out float _)) {
-                            WriteError(currentPosition.label, currentPosition.line, data, $"Hey i was trying to run this line of code and kind of expected the {numbered} parameter to be a number but it wasn't! Can you double check that you wrote the right thing? Not sure how to deal with {data[i+1]}.");
-                            return false;
-                        }
-                        break;
-                    case LisaXParameter.Label:
-                        if (!script.ContainsKey(data[1])) {
-                            WriteError(currentPosition.label, currentPosition.line, data, $"I was looking at the {numbered} parameter, hoping it'd be a label, but it wasn't! At least, I can't find a label called {data[i+1]}.");
-                            return false;
-                        }
-                        break;
-                }
-            }
-
-            methodHooks[data[0]].method.Invoke(data);
-            return methodHooks[data[0]].continues;
-
-        } else {
-            Debug.LogWarning($"Unknown command {line}");
-            WriteError(currentPosition.label, currentPosition.line, data, $"Unknown command {line}");
+        if (line.methodName != line.methodHook.name) {
+            // Debug.Log("fruck");
+            line.methodHook = methodHooks[line.methodName];
+    
         }
 
-        return true;
+        string[] tokens = new List<string>(line.stringTokens).ToArray();
+
+        if (line.hasValueOf) {
+            // tokens = ParseTokens(line.unparsedLine);
+            for(int i = 0; i < tokens.Length; i++) {
+                tokens[i] = ParseToken(tokens[i]);
+            }
+        }
+
+        if (line.methodHook.virtualMethod) {
+            // Debug.Log("Calling virtual method");
+            for (int i = 0; i < line.methodHook.parameterNames.Length; i++)
+            {
+                // Debug.Log($"Setting Param: {line.methodHook.parameterNames[i]} to {line.stringTokens[i+1]}");
+                if (properties.ContainsKey(line.methodHook.parameterNames[i])) {
+                    properties[line.methodHook.parameterNames[i]] = tokens[i+1];
+                } else {
+                    properties.Add(line.methodHook.parameterNames[i], tokens[i+1]);
+                }
+            }
+            callStack.Push(currentPosition);
+            RunLabel(line.methodHook.name);
+            return false;
+        } else {
+            line.methodHook.method.Invoke(tokens);
+        }
+        
+        return line.methodHook.continues;
     }
 
     public void WriteError(string label, int line, string[] tokens, string error)
