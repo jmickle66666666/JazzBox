@@ -87,6 +87,12 @@ public class SimpleTasklist : EditorWindow
                     task.done = true;
                     SaveTasks();
                 }
+                if (GUILayout.Button("V", GUILayout.Width(20))) {
+                    tasks.Add(task);
+                    toRemove.Add(task);
+                    break;
+                    SaveTasks();
+                }
                 if (GUILayout.Button("X", GUILayout.Width(20))) {
                     toRemove.Add(task);
                 }
@@ -127,7 +133,6 @@ public class SimpleTasklist : EditorWindow
     void LoadTasks() {
         tasks = new List<SimpleTask>();
         if (File.Exists(savePath)) {
-            Debug.Log("Hello!");
             string[] lines = File.ReadAllLines(savePath);
             foreach (var l in lines)
             {
@@ -135,7 +140,7 @@ public class SimpleTasklist : EditorWindow
             }
         }
     }
-
+    
     void SaveTasks() {
         if (File.Exists(savePath)) {
             File.Delete(savePath);
