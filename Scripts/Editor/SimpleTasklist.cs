@@ -42,6 +42,11 @@ public class SimpleTasklist : EditorWindow
 
     void OnGUI()
     {
+        if (tasks == null) {
+            LoadTasks();
+            toRemove = new List<SimpleTask>();
+        }
+        
         if (addNew) {
             GUILayout.BeginHorizontal();
             newContent = GUILayout.TextField(newContent);
