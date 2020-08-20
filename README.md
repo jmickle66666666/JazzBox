@@ -63,6 +63,8 @@
 
 `editor/buildnumber.cs` - every time scripts recompile it'll save a random string to a file to get fake build numbers. might actually be useful in some cases but i just thought it was fun
 
+`simpletasklist.cs` - really simple task list window to keep track of stuff
+
 `editor/texturestomaterials.cs` - right click texture(s) and there's an option to create material(s) for them
 
 ### shaders
