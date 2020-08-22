@@ -48,13 +48,19 @@ public class SimpleTasklist : EditorWindow
         }
         
         if (addNew) {
+            bool pressedEnter = false;
+            if (Event.current != null && Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Return) {
+                pressedEnter = true;
+            }
             GUILayout.BeginHorizontal();
+            GUI.SetNextControlName("New Task Input");
             newContent = GUILayout.TextField(newContent);
             GUILayout.EndHorizontal();
             
             GUILayout.BeginHorizontal();
 
-            if (GUILayout.Button("Add")) {
+
+            if (GUILayout.Button("Add") || (GUI.GetNameOfFocusedControl() == "New Task Input" && pressedEnter)) {
                 tasks.Add(new SimpleTask() {
                     done = false,
                     description = newContent
